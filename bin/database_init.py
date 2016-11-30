@@ -1,4 +1,5 @@
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker,scoped_session
 from sqlalchemy import Column,Integer,String,ForeignKey,DateTime
 
 
@@ -9,7 +10,7 @@ sys.path.append(BASE_DIR)
 from conf import settings
 
 Base = declarative_base()
-
+db_session = scoped_session(sessionmaker(bind=settings.engine))
 
 
 class SH_Area(Base):
@@ -38,8 +39,9 @@ def db_init():
     Base.metadata.create_all(settings.engine)  # 创建表结构
     for district in settings.sh_area_dict.keys():
         item_obj = SH_Area(name = district)
-        settings.session.add(item_obj)
-    settings.session.commit()
+        db_session.add(item_obj)
+    db_session.commit()
+    db_session.remove()
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+#from sqlalchemy.orm import sessionmaker,scoped_session
 BASE_DIR  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB={
     'connector':'mysql+pymysql://root:aircool123@127.0.0.1:3306/devdb1',
@@ -8,8 +8,9 @@ DB={
 }
 
 engine = create_engine(DB['connector'], max_overflow= DB['max_session'], echo= False)
-SessionCls = sessionmaker(bind=engine)
-session = SessionCls()
+# SessionCls = sessionmaker(bind=engine)
+# session = SessionCls()
+#db_session = scoped_session(sessionmaker(bind=engine))
 
 
 sh_area_dict = {

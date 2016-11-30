@@ -11,6 +11,7 @@ sys.path.append(BASE_DIR)
 
 from conf import settings
 from database_init import Online_Data,SH_Total_city_dealed,SH_Area
+from sqlalchemy.orm import sessionmaker,scoped_session
 from tornado.options import define,options
 
 define("port",default=8888,type=int)
@@ -64,34 +65,45 @@ def shanghai_data_process():
 
     print("tornado time cost: %s" %(time.time()-start_time) )
 
-    #settings.session
+    db_session = scoped_session(sessionmaker(bind=settings.engine))
+    session = db_session()
     update_date = datetime.datetime.now()
     dealed_house_num_obj = SH_Total_city_dealed(dealed_house_num=dealed_house_num,
                                                 date = update_date)
-    settings.session.add(dealed_house_num_obj)
+    session.add(dealed_house_num_obj)
 
     for key,value in sh_online_data.items():
-        area_obj = settings.session.query(SH_Area).filter_by(name=key).first()
+        area_obj = session.query(SH_Area).filter_by(name=key).first()
         online_data_obj = Online_Data(sold_in_90 = value['sold_in_90'],
                                       avg_price = value['avg_price'],
                                       yesterday_check_num = value['yesterday_check_num'],
                                       on_sale = value['on_sale'],
                                       date = update_date,
                                       belong_area = area_obj.id)
-        settings.session.add(online_data_obj)
-    settings.session.commit()
+        session.add(online_data_obj)
+    session.commit()
+    db_session.remove()
 
-class IndexHandler(web.RequestHandler):
+class BaseHandler(web.RequestHandler):
+    def initialize(self):
+        self.db_session = scoped_session(sessionmaker(bind=settings.engine))
+        self.db_query = self.db_session().query
+
+    def on_finish(self):
+        self.db_session.remove()
+
+class IndexHandler(BaseHandler):
+
     def get(self, *args, **kwargs):
-        total_dealed_house_num = settings.session.query(SH_Total_city_dealed).all()
+        total_dealed_house_num = self.db_query(SH_Total_city_dealed).all()
         cata_list = []
         data_list = []
         for item in total_dealed_house_num:
             cata_list.append(time.mktime(item.date.timetuple()))
             data_list.append(item.dealed_house_num)
 
-        area_id = settings.session.query(SH_Area).filter_by(name='all').first()
-        area_avg_price = settings.session.query(Online_Data).filter_by(belong_area = area_id.id).all()
+        area_id = self.db_query(SH_Area).filter_by(name='all').first()
+        area_avg_price = self.db_query(Online_Data).filter_by(belong_area = area_id.id).all()
         area_date_list = []
         area_data_list = []
         area_on_sale_list = []
@@ -108,11 +120,11 @@ class IndexHandler(web.RequestHandler):
                     area_on_sale_list = area_on_sale_list,area_sold_in_90_list=area_sold_in_90_list,
                     area_yesterday_check_num = area_yesterday_check_num,city="sh",area="all")
 
-class QueryHandler(web.RequestHandler):
+class QueryHandler(BaseHandler):
     def get(self,city,area):
 
         if city == "sh":
-            total_dealed_house_num = settings.session.query(SH_Total_city_dealed).all()
+            total_dealed_house_num = self.db_query(SH_Total_city_dealed).all()
 
             cata_list = []
             data_list = []
@@ -120,8 +132,8 @@ class QueryHandler(web.RequestHandler):
                 cata_list.append(time.mktime(item.date.timetuple()))
                 data_list.append(item.dealed_house_num)
 
-            area_id = settings.session.query(SH_Area).filter_by(name=area).first()
-            area_avg_price = settings.session.query(Online_Data).filter_by(belong_area=area_id.id).all()
+            area_id = self.db_query(SH_Area).filter_by(name=area).first()
+            area_avg_price = self.db_query(Online_Data).filter_by(belong_area=area_id.id).all()
             area_date_list = []
             area_data_list = []
             area_on_sale_list = []
