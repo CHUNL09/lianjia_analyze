@@ -7,3 +7,4 @@
 2 执行bin/database_init.py初始化数据库。
 3 执行bin/data_collect.py运行程序。
 
+![image](https://github.com/CHUNL09/lianjia_analyze/blob/master/project_pic/%E4%B8%8A%E6%B5%B7%E6%88%BF%E5%B1%8B%E6%88%90%E4%BA%A4%E6%80%BB%E9%87%8F.png)
